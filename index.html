@@ -4,6 +4,12 @@
     <meta name="viewport" content="initial-scale=1.0" />
     <meta http-equiv="X-UA-Compatible" content="ie=edge" />
     <title>Exercise Javascript Game</title>
+    <link
+      rel="stylesheet"
+      href="https://use.fontawesome.com/releases/v5.7.2/css/all.css"
+      integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr"
+      crossorigin="anonymous"
+    />
     <style>
       .container {
         height: 90vh;
@@ -59,8 +65,8 @@
         width: 100px;
         height: 100px;
         padding: 4px;
-        /* background-color: rgba(0, 0, 0, 0.1); */
-        background-color: red;
+        background-color: rgba(0, 0, 0, 0.1);
+        /* background-color: red; */
         box-shadow: 0px 1px 8px 0px black;
         border-radius: 50px;
         text-align: center;
@@ -74,12 +80,25 @@
       Score: <span class="score">0</span>
     </div>
     <div class="container">
-      <div class="baddy"></div>
+      <!-- Commented because it's fixed -->
+      <!-- <div class="baddy"></div> -->
       <div class="crossHair">
         <div class="crossInfo"></div>
       </div>
     </div>
     <script>
+      //array of icons
+      var icons = [
+        "bath",
+        "bug",
+        "bowling-ball",
+        "coffee",
+        "couch",
+        "football-ball",
+        "gem",
+        "laptop"
+      ];
+
       var score;
       // Boolean value, is game started alreay
       var gameplay;
@@ -91,11 +110,20 @@
       var crossHair = document.querySelector(".crossHair");
       var baddy = document.querySelector(".baddy");
       var btnStart = document.querySelector(".btnStart");
+      var myContainer = {
+        width: container.offsetWidth,
+        height: container.offsetHeight,
+        left: container.offsetLeft,
+        top: container.offsetTop
+      };
 
       btnStart.addEventListener("click", startGame);
 
       function startGame() {
         if (!gameplay) {
+          //Create bombs
+          setupBadguys(10);
+
           score = 0;
           gameplay = true;
 
@@ -103,10 +131,58 @@
         }
       }
 
+      function setupBadguys(num) {
+        for (let x = 0; x < num; x++) {
+          badMaker();
+        }
+      }
+
+      function randomColor() {
+        function c() {
+          var hex=Math.floor(Math.random()*256).toString(16);
+          var response=("0"+String(hex)).substr(-2);
+          return response;
+        }
+        return '#'+c()+c()+c();
+        // console.log('#'+c()+c()+c());
+      }
+
+      function badMaker() {
+        var div = document.createElement("div");
+        // Between 50-100
+        var randomWidth = Math.floor(Math.random() * 50) + 50;
+        // Get random icons
+        var iconRan = "fa-" + icons[Math.floor(Math.random() * icons.length)];
+
+        // Random position
+        // myContainer.width - dealing with vertical width
+        // substract with of element we created (randomWidth)
+        var x = Math.floor(Math.random() * (myContainer.width - randomWidth));
+        var y = Math.floor(Math.random() * (myContainer.height - randomWidth));
+
+        div.innerHTML = '<i class="fas '+iconRan+'">';
+        div.setAttribute("class", "baddy");
+        //Moving speed of item
+        div.dataset.speed=Math.ceil(Math.random()*10)+2;
+        // Moving direction of item
+        div.dataset.dir=Math.ceil(Math.random()*4);
+        // How many iterations it's gona move to the same direction
+        div.dataset.mover=Math.ceil(Math.random()*15)+2;
+        div.style.fontSize=randomWidth+'px';
+        // We'll substract because we don't want image to get out of borders
+        div.style.lineHeight=randomWidth - (randomWidth*0.3) +'px';
+        div.style.height=randomWidth+'px';
+        div.style.color=randomColor();
+        div.style.left = x + "px";
+        div.style.top = y + "px";
+        container.appendChild(div);
+      }
+
       function update() {
         // console.log("Game in play");
 
-        console.log(isCollision(crossHair, baddy));
+        // Commented because we're creating elements dynamically
+        // console.log(isCollision(crossHair, baddy));
 
         // gameplay loop
         if (!gameplay) {
@@ -115,6 +191,18 @@
         } else {
           reqUpdate = window.requestAnimationFrame(update);
         }
+
+        var tempEnemy = document.querySelectorAll(".baddy"); // returnt an array of elements
+
+        for (var enemy of tempEnemy) {
+          // isCollision(crossHair, enemy);
+          // console.log(isCollision(crossHair, enemy));
+          itemMover(enemy);
+        }
+      }
+
+      function itemMover(e) {
+        console.log(e);
       }
 
       function isCollision(a, b) {
@@ -130,10 +218,10 @@
         // console.log(aRect.width);
 
         return !(
-          ((aRect.top + aRect.height) < bRect.top) ||
-          (aRect.top >( bRect.top + bRect.height)) ||
-          ((aRect.left + aRect.width) < bRect.left) ||
-          (aRect.left > (bRect.left + bRect.width))
+          aRect.top + aRect.height < bRect.top ||
+          aRect.top > bRect.top + bRect.height ||
+          aRect.left + aRect.width < bRect.left ||
+          aRect.left > bRect.left + bRect.width
         );
       }
 
