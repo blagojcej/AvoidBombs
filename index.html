@@ -104,7 +104,7 @@
       var gameplay;
       // Hold anomation frame
       var reqUpdate;
-
+      var mDown = false;
       // Grab element and move around with cursor
       var container = document.querySelector(".container");
       var crossHair = document.querySelector(".crossHair");
@@ -117,12 +117,31 @@
         top: container.offsetTop
       };
 
+      // capture or bubble item by setting mDown variable
+      container.addEventListener(
+        "mousedown",
+        function() {
+          mDown = true;
+        },
+        true
+      );
+      container.addEventListener(
+        "mouseup",
+        function() {
+          mDown = false;
+        },
+        true
+      );
+
+      // whenever we're in the container move crossHair arround
+      // last elemenet: true because we've not any other elements to interract with
+      container.addEventListener("mousemove", move, true);
       btnStart.addEventListener("click", startGame);
 
       function startGame() {
         if (!gameplay) {
           //Create bombs
-          setupBadguys(10);
+          setupBadguys(5);
 
           score = 0;
           gameplay = true;
@@ -139,11 +158,11 @@
 
       function randomColor() {
         function c() {
-          var hex=Math.floor(Math.random()*256).toString(16);
-          var response=("0"+String(hex)).substr(-2);
+          var hex = Math.floor(Math.random() * 256).toString(16);
+          var response = ("0" + String(hex)).substr(-2);
           return response;
         }
-        return '#'+c()+c()+c();
+        return "#" + c() + c() + c();
         // console.log('#'+c()+c()+c());
       }
 
@@ -160,19 +179,21 @@
         var x = Math.floor(Math.random() * (myContainer.width - randomWidth));
         var y = Math.floor(Math.random() * (myContainer.height - randomWidth));
 
-        div.innerHTML = '<i class="fas '+iconRan+'">';
+        div.innerHTML = '<i class="fas ' + iconRan + '">';
         div.setAttribute("class", "baddy");
+        // Set point for element
+        div.dataset.points = Math.ceil(Math.random() * 10) + 2;
         //Moving speed of item
-        div.dataset.speed=Math.ceil(Math.random()*10)+2;
+        div.dataset.speed = Math.ceil(Math.random() * 10) + 2;
         // Moving direction of item
-        div.dataset.dir=Math.ceil(Math.random()*4);
+        div.dataset.dir = Math.ceil(Math.random() * 4);
         // How many iterations it's gona move to the same direction
-        div.dataset.mover=Math.ceil(Math.random()*15)+2;
-        div.style.fontSize=randomWidth+'px';
+        div.dataset.mover = Math.ceil(Math.random() * 15) + 2;
+        div.style.fontSize = randomWidth + "px";
         // We'll substract because we don't want image to get out of borders
-        div.style.lineHeight=randomWidth - (randomWidth*0.3) +'px';
-        div.style.height=randomWidth+'px';
-        div.style.color=randomColor();
+        div.style.lineHeight = randomWidth - randomWidth * 0.3 + "px";
+        div.style.height = randomWidth + "px";
+        div.style.color = randomColor();
         div.style.left = x + "px";
         div.style.top = y + "px";
         container.appendChild(div);
@@ -195,14 +216,77 @@
         var tempEnemy = document.querySelectorAll(".baddy"); // returnt an array of elements
 
         for (var enemy of tempEnemy) {
-          // isCollision(crossHair, enemy);
           // console.log(isCollision(crossHair, enemy));
           itemMover(enemy);
         }
       }
 
       function itemMover(e) {
-        console.log(e);
+        // console.log(e);
+
+        if (mDown && isCollision(crossHair, e)) {
+          // console.log("HIT");
+
+          // Remove clicked element
+          e.parentNode.removeChild(e);
+          
+          // Create new element
+          badMaker();
+
+          scoreUpdate(e.dataset.points);
+
+          //Don't continue to moving element
+          return;
+        }
+
+        // get left position
+        var x = parseInt(e.style.left);
+        // get top position
+        var y = parseInt(e.style.top);
+        //get speed
+        var sp = parseInt(e.dataset.speed);
+
+        // Move element
+        // check if mover hits zero
+        if (e.dataset.mover <= 0) {
+          //Moving speed of item
+          e.dataset.speed = Math.ceil(Math.random() * 10) + 2;
+          // Moving direction of item
+          e.dataset.dir = Math.ceil(Math.random() * 4);
+          // How many iterations it's gona move to the same direction
+          e.dataset.mover = Math.ceil(Math.random() * 15) + 2;
+        } else {
+          // continue to move element to same diraction
+          //decrease by one
+          e.dataset.mover--;
+          if (e.dataset.dir == "1" && x < myContainer.width) {
+            //get the left position and increment by speed
+            x += sp; //right
+          }
+
+          if (e.dataset.dir == "2" && x > 0) {
+            //get the left position and decrement by speed
+            x -= sp; //left
+          }
+
+          if (e.dataset.dir == "3" && y < myContainer.height) {
+            //get the top position and increment by speed
+            y += sp; //down
+          }
+
+          if (e.dataset.dir == "4" && y > 0) {
+            //get the top position and decrement by speed
+            y -= sp; //up
+          }
+        }
+
+        e.style.left = x + "px";
+        e.style.top = y + "px";
+      }
+
+      function scoreUpdate(points) {
+        score+=parseInt(points);
+        document.querySelector('.score').innerHTML=score;
       }
 
       function isCollision(a, b) {
@@ -224,9 +308,6 @@
           aRect.left > bRect.left + bRect.width
         );
       }
-
-      // whenever we're in the container move crossHair arround
-      container.addEventListener("mousemove", move, true);
 
       function move(e) {
         document.querySelector(".crossInfo").innerHTML =
