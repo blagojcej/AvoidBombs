@@ -72,6 +72,16 @@
         text-align: center;
         z-index: 2;
       }
+
+      .gameover {
+        position: absolute;
+        text-align: center;
+        color: white;
+        font-size: 3em;
+        line-height: 300px;
+        text-transform: uppercase;
+        width: 100%;
+      }
     </style>
   </head>
   <body>
@@ -80,6 +90,7 @@
       Score: <span class="score">0</span>
     </div>
     <div class="container">
+      <div class="gameover">Click Start Button</div>
       <!-- Commented because it's fixed -->
       <!-- <div class="baddy"></div> -->
       <div class="crossHair">
@@ -105,9 +116,13 @@
       // Hold anomation frame
       var reqUpdate;
       var mDown = false;
+      // every time we hit one of the bad guys we decrease BGcount
+      var BGcount = 10;
+      var hazards = 3;
       // Grab element and move around with cursor
       var container = document.querySelector(".container");
       var crossHair = document.querySelector(".crossHair");
+      var gameover = document.querySelector(".gameover");
       var baddy = document.querySelector(".baddy");
       var btnStart = document.querySelector(".btnStart");
       var myContainer = {
@@ -140,13 +155,30 @@
 
       function startGame() {
         if (!gameplay) {
-          //Create bombs
-          setupBadguys(5);
+          BGcount = 10;
 
           score = 0;
+          hazards = 3;
+
+          //Create bombs
+          setupBadguys(6);
+
           gameplay = true;
+          gameover.style.display = "none";
 
           reqUpdate = window.requestAnimationFrame(update);
+        }
+      }
+
+      function endGame() {
+        gameover.style.display = "block";
+        gameover.innerHTML = "GAME OVER <br>SCORE " + score;
+        gameplay = false;
+
+        var tempEnemy = document.querySelectorAll(".baddy"); // returnt an array of elements
+        for (var e of tempEnemy) {
+          // Remove element
+          e.parentNode.removeChild(e);
         }
       }
 
@@ -170,8 +202,29 @@
         var div = document.createElement("div");
         // Between 50-100
         var randomWidth = Math.floor(Math.random() * 50) + 50;
+
+        var iconRan;
+
+        if (hazards > 0) {
+          hazards--;
+          iconRan = "fa-bomb";
+          div.dataset.points = 0;
+          div.style.color = "white";
+          div.style.backgroundColor = "black";
+          randomWidth = 150;
+        } else {
+          // Get random icons
+          var iconRan = "fa-" + icons[Math.floor(Math.random() * icons.length)];
+
+          // Set point for element
+          div.dataset.points = Math.ceil(Math.random() * 10) + 2;
+          // Between 50-100
+          var randomWidth = Math.floor(Math.random() * 50) + 50;
+          div.style.color = randomColor();
+        }
+
         // Get random icons
-        var iconRan = "fa-" + icons[Math.floor(Math.random() * icons.length)];
+        // var iconRan = "fa-" + icons[Math.floor(Math.random() * icons.length)];
 
         // Random position
         // myContainer.width - dealing with vertical width
@@ -182,18 +235,20 @@
         div.innerHTML = '<i class="fas ' + iconRan + '">';
         div.setAttribute("class", "baddy");
         // Set point for element
-        div.dataset.points = Math.ceil(Math.random() * 10) + 2;
+        // div.dataset.points = Math.ceil(Math.random() * 10) + 2;
         //Moving speed of item
         div.dataset.speed = Math.ceil(Math.random() * 10) + 2;
         // Moving direction of item
-        div.dataset.dir = Math.ceil(Math.random() * 4);
+        // div.dataset.dir = Math.ceil(Math.random() * 4);
+        // Moving direction of item up to 8 directions (up, down, left, right, diagonal)
+        div.dataset.dir = Math.ceil(Math.random() * 8);
         // How many iterations it's gona move to the same direction
         div.dataset.mover = Math.ceil(Math.random() * 15) + 2;
         div.style.fontSize = randomWidth + "px";
         // We'll substract because we don't want image to get out of borders
         div.style.lineHeight = randomWidth - randomWidth * 0.3 + "px";
         div.style.height = randomWidth + "px";
-        div.style.color = randomColor();
+        // div.style.color = randomColor();
         div.style.left = x + "px";
         div.style.top = y + "px";
         container.appendChild(div);
@@ -227,13 +282,25 @@
         if (mDown && isCollision(crossHair, e)) {
           // console.log("HIT");
 
+          // Check if collision is with bomb
+          //  if points are 0
+          if (e.dataset.points == 0) {
+            endGame();
+            return;
+          }
+
           // Remove clicked element
           e.parentNode.removeChild(e);
-          
+
           // Create new element
           badMaker();
+          BGcount--;
 
           scoreUpdate(e.dataset.points);
+
+          if (BGcount < 0) {
+            endGame();
+          }
 
           //Don't continue to moving element
           return;
@@ -252,13 +319,18 @@
           //Moving speed of item
           e.dataset.speed = Math.ceil(Math.random() * 10) + 2;
           // Moving direction of item
-          e.dataset.dir = Math.ceil(Math.random() * 4);
+          // e.dataset.dir = Math.ceil(Math.random() * 4);
+          // move up, down, left, right and diagonally
+          e.dataset.dir = Math.ceil(Math.random() * 8);
           // How many iterations it's gona move to the same direction
           e.dataset.mover = Math.ceil(Math.random() * 15) + 2;
         } else {
           // continue to move element to same diraction
           //decrease by one
           e.dataset.mover--;
+
+          // Moving towards 4 directions (up, down, left, right)
+          /*
           if (e.dataset.dir == "1" && x < myContainer.width) {
             //get the left position and increment by speed
             x += sp; //right
@@ -278,6 +350,51 @@
             //get the top position and decrement by speed
             y -= sp; //up
           }
+          */
+
+          // Moving towards 8 directions (up, down, left, right, diagonal)
+          // If it's 1 go to righ, if it's 2 also go to the right, if it's 8
+          if (
+            (e.dataset.dir == "1" ||
+              e.dataset.dir == "2" ||
+              e.dataset.dir == "8") &&
+            x < myContainer.width
+          ) {
+            //get the left position and increment by speed
+            x += sp; //right
+          }
+
+          if (
+            (e.dataset.dir == "4" ||
+              e.dataset.dir == "5" ||
+              e.dataset.dir == "6") &&
+            x > 0
+          ) {
+            //get the left position and decrement by speed
+            x -= sp; //left
+          }
+
+          // If it's 3 or 2 go to down
+          if (
+            (e.dataset.dir == "3" ||
+              e.dataset.dir == "2" ||
+              e.dataset.dir == "4") &&
+            y < myContainer.height
+          ) {
+            //get the top position and increment by speed
+            y += sp; //down
+          }
+
+          // 7 - moving up
+          if (
+            (e.dataset.dir == "7" ||
+              e.dataset.dir == "6" ||
+              e.dataset.dir == "8") &&
+            y > 0
+          ) {
+            //get the top position and decrement by speed
+            y -= sp; //up
+          }
         }
 
         e.style.left = x + "px";
@@ -285,8 +402,8 @@
       }
 
       function scoreUpdate(points) {
-        score+=parseInt(points);
-        document.querySelector('.score').innerHTML=score;
+        score += parseInt(points);
+        document.querySelector(".score").innerHTML = score;
       }
 
       function isCollision(a, b) {
