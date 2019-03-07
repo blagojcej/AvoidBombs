@@ -46,6 +46,10 @@
       bottom: 0;
     }
 
+    .score {
+      font-size: 3em;
+    }
+
     .btnStart {
       display: inline-block;
       padding: 15px;
@@ -165,14 +169,16 @@
 
     // pass event information - e
     function mouseDown(e) {
-      var div = document.createElement('div');
-      div.setAttribute('class', 'fireme');
-      div.style.left = (e.clientX - 140) + 'px';
-      div.style.top = (e.clientY - 100) + 'px';
-      div.dataset.counter = 100;
-      div.style.width = 100 + 'px';
-      div.style.height = 100 + 'px';
-      container.appendChild(div);
+      if (gameplay) {
+        var div = document.createElement('div');
+        div.setAttribute('class', 'fireme');
+        div.style.left = (e.clientX - 140) + 'px';
+        div.style.top = (e.clientY - 100) + 'px';
+        div.dataset.counter = 100;
+        div.style.width = 100 + 'px';
+        div.style.height = 100 + 'px';
+        container.appendChild(div);
+      }
     }
 
     function startGame() {
@@ -202,7 +208,7 @@
         // Remove element
         e.parentNode.removeChild(e);
       }
-      
+
       var tempShots = document.querySelectorAll(".fireme"); // returnt an array of elements
       for (var shot of tempShots) {
         // Remove element
